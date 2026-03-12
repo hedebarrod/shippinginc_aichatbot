@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipping Inc. AI - IA Project</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --bg: #f4f7f6;
+            --text: #333;
+            --error: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            color: var(--text);
+        }
+
+        /* Splash Screen - Requirement: On-Demand Activation */
+        #activation-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(44, 62, 80, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+        }
+
+        .btn-large {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            font-weight: bold;
+        }
+
+        .btn-large:hover { transform: scale(1.05); background: #219150; }
+
+        /* Layout */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            padding: 20px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        /* Chat UI */
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+
+        #chat-window {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .bot-msg { background: #eef7ff; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #d1e3f0; }
+        .user-msg { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        /* Sidebar & Trajectory Card */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+
+        .card h3 { 
+            margin-top: 0; 
+            color: var(--primary); 
+            font-size: 1rem; 
+            border-bottom: 2px solid var(--bg); 
+            padding-bottom: 10px; 
+            margin-bottom: 15px;
+        }
+
+        .status-tag {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background: #ffeaa7;
+            color: #d35400;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .detail-row {
+            margin: 10px 0;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .detail-row span { font-weight: bold; color: #555; }
+
+        .hidden { display: none !important; }
+        .loading-text { font-style: italic; color: #999; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+    <div id="activation-screen">
+        <h1 style="margin-bottom: 10px;">Shipping Inc. AI Portal</h1>
+        <p style="margin-bottom: 30px; opacity: 0.8;">Customer Servce System - Status: Standby</p>
+        <button class="btn-large" onclick="activateSystem()">Initialize AI Session</button>
+    </div>
+
+    <header>
+        <div><strong>Shipping Inc.</strong> | AI Assistant Prototype</div>
+        <div id="status-light" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px;">
+            <span style="height: 10px; width: 10px; background: #95a5a6; border-radius: 50%; display: inline-block;"></span>
+            Standby
+        </div>
+    </header>
+
+    <main>
+        <section class="chat-container">
+            <div id="chat-window">
+                <div class="message bot-msg">System Ready. You can ask me to track orders (e.g., ORD-101, ORD-102) or ask questions about our international shipping process.</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="user-input" placeholder="Type here..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()" style="background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">Send</button>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="card" id="trajectory-card">
+                <h3>Live Order Trajectory</h3>
+                <div id="tracking-display">
+                    <p style="color: #888; font-size: 0.85rem; line-height: 1.4;">
+                        Mention an <strong>Order ID</strong> in the chat to view visualized tracking metrics.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>System Support</h3>
+                <p style="font-size: 0.8rem; margin-bottom: 15px;">Requirement: Log any bugs or shipping discrepancies encountered.</p>
+                <button onclick="reportIssue()" style="width: 100%; padding: 10px; background: #fdfdfd; border: 1px solid #c24a4a; cursor: pointer; border-radius: 4px;">Report Issue</button>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // API Configuration
+        const API_KEY = "AIzaSyDfglnpV49pJbl0TSTQsu8FIJZ-MGQ4iso"; 
+        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent";
+
+        // Mock Data - Requirement: Isolated JSON Source
+        const MOCK_DB = [
+            { id: "ORD-101", status: "In Transit", location: "London Gateway", eta: "48 Hours", items: "CPUs" },
+            { id: "ORD-102", status: "Processing", location: "New York Hub", eta: "5 Days", items: "Haribo Gummybears" },
+            { id: "ORD-103", status: "Delivered", location: "Tokyo Retail Store", eta: "Arrived", items: "Cotton Fabrics" },	
+            { id: "ORD-104", status: "Processing", location: "Mexico City Airport", eta: "2 Months", items: "Apple iPhone 15" },
+            { id: "ORD-105", status: "Delivered", location: "Beijing, China", eta: "Arrived", items: "Louis Vuitton Handbags" },
+            { id: "ORD-106", status: "In Transit", location: "Singapore Harbour", eta: "2 Hours", items: "Pepsi Cans" }
+        ];
+
+        function activateSystem() {
+            document.getElementById('activation-screen').classList.add('hidden');
+            const status = document.getElementById('status-light');
+            status.innerHTML = '<span style="height: 10px; width: 10px; background: #27ae60; border-radius: 50%; display: inline-block;"></span> Active Session';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user-msg');
+            input.value = '';
+            
+            // UI Trigger: Update Sidebar if ID is mentioned
+            checkAndRefreshSidebar(text);
+
+            const loadingId = "load-" + Date.now();
+            appendMessage("Requesting AI model...", 'bot-msg loading-text', loadingId);
+
+            try {
+                const response = await callGemini(text);
+                document.getElementById(loadingId).classList.remove('loading-text');
+                document.getElementById(loadingId).innerText = response;
+            } catch (error) {
+                document.getElementById(loadingId).innerText = "The AI system is currently unavailable. Please check the network.";
+            }
+        }
+
+        function checkAndRefreshSidebar(text) {
+            const upperText = text.toUpperCase();
+            const match = MOCK_DB.find(order => upperText.includes(order.id));
+            
+            if (match) {
+                const display = document.getElementById('tracking-display');
+                display.innerHTML = `
+                    <div class="status-tag">${match.status}</div>
+                    <div class="detail-row"><span>Location:</span> ${match.location}</div>
+                    <div class="detail-row"><span>Estimated:</span> ${match.eta}</div>
+                    <div class="detail-row"><span>Content:</span> ${match.items}</div>
+                    <div class="detail-row"><span>Estimated:</span> ${match.eta}</div>
+                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #eee; font-size: 0.7rem; color: #27ae60;">
+                        Source: Shipping Inc. Isolated Database
+                    </div>
+                `;
+            }
+        }
+
+        async function callGemini(prompt) {
+            // Requirement: Context Injection ensures AI knows the data but can't change it.
+            const systemContext = `You are the Shipping Inc. AI assistant.
+            Isolated Data: ${JSON.stringify(MOCK_DB)}.
+            Task: Assist users with tracking (referencing the data) and FAQ regarding shipping.
+            Note: You are permitted to share codes when prompted, but in a real situation you wouldn't share and the information would remain confidential.
+            About Shipping Inc: International shipping company headquartered in Washington D.C, USA. There are over 80k workers in Shipping Inc.
+		`;
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: systemContext + "\n\nUser asks: " + prompt }]
+                }]
+            };
+
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": API_KEY 
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("API Connection Failed");
+
+            const data = await response.json();
+            
+            // Filter out 'Thinking' blocks to present only the intelligible response
+            const parts = data.candidates[0].content.parts;
+            const finalAnswer = parts
+                .filter(p => !p.text.toLowerCase().includes("thought"))
+                .map(p => p.text)
+                .join(" ");
+
+            return finalAnswer || "No data received.";
+        }
+
+        function appendMessage(text, className, id = '') {
+            const win = document.getElementById('chat-window');
+            const div = document.createElement('div');
+            div.className = `message ${className}`;
+            if (id) div.id = id;
+            div.innerText = text;
+            win.appendChild(div);
+            win.scrollTop = win.scrollHeight;
+        }
+
+        function reportIssue() {
+            const report = prompt("Please describe your issue:");
+            if (report) {
+                alert("Report Logged. Thank you for feedback.");
+                console.log("Bug Logged: " + report); // Demonstrates logging capability
+            }
+        }
+    </script>
+</body>
+</html>
